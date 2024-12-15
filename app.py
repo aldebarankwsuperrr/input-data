@@ -13,7 +13,7 @@ def open_google_sheet(sheet_title, worksheet_title):
   secret_dict = st.secrets["CREDENTIALS"]
 
   SCOPES = ('https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive')
-  service_account_info = json.loads(json.dumps(secret_dict))
+  service_account_info = json.loads(json.dumps(dict(secret_dict)))
   my_credentials = service_account.Credentials.from_service_account_info(service_account_info, scopes=SCOPES)
   gc = pygsheets.authorize(custom_credentials=my_credentials)
   sheet = gc.open(sheet_title)
