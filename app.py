@@ -156,6 +156,7 @@ def main():
   password = st.text_input("Enter a password", type="password")
   if password == st.secrets["PASSWORD"]:
     sheet_title = 'experiment_database'
+    free_class = "FREE CLASS 2024"
     worksheet_titles = ['event_list', 'user', 'event_log', 'event_transaction', 'registered_user', 'unregistered_user', 'data_member_terbaru']
     
     event_list_worksheet = open_google_sheet(sheet_title, worksheet_titles[0])
@@ -172,7 +173,7 @@ def main():
       return
     else:
       try:
-        new_worksheet = open_google_sheet(sheet_title, tanggal_event)
+        new_worksheet = open_google_sheet(free_class, tanggal_event)
         new_data = read_worksheet(new_worksheet, header=False)
       except pygsheets.exceptions.WorksheetNotFound as e:
         st.error(f"Worksheet not found: {e}")
