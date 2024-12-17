@@ -169,7 +169,7 @@ def preprocess_nomor(nomor):
 
 def main():
   password = st.text_input("Enter a password", type="password")
-  if password == 'suramadu':
+  if password == st.secrets["PASSWORD"]:
     sheet_title = 'experiment_database'
     free_class = "FREE CLASS 2024"
     bootcamp = "BOOTCAMP 2024"
@@ -244,7 +244,5 @@ def main():
       bar.progress(100, text="completed")
       bar.empty()
       st.write("Done")
-      
-    
 if __name__ == "__main__":
   main()
