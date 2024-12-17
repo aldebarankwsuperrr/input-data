@@ -122,7 +122,7 @@ def insert_to_registered_user(registered_user_worksheet, registered_user, data_m
 
   return new_registered_user_merged
 
-def extract_data_event(new_data):
+def extract_data_free_class(new_data):
   new_user = pd.DataFrame({"nama_user":[], "email_user":[], "nomor_user":[]})
   i = 11
   for j in range(i, new_data.columns[-1], 3):
@@ -137,11 +137,26 @@ def extract_data_event(new_data):
     temp_user['source'] = new_data[[j]].loc[0].values[0]
     new_user = pd.concat([new_user, temp_user], axis=0, ignore_index=True)
   new_user.drop_duplicates(subset=['email_user'], inplace=True)
-
   buyer = new_data[new_data[1]!=""][range(1, 8)].loc[2:].copy()
   buyer.columns = ['asal','nama_user','email_user','nomor_user','paket','diskon','nominal']
-
+  
   return new_user, buyer
+
+def extract_data_bootcamp(new_data):
+  new_user = pd.DataFrame({"nama_user":[], "email_user":[], "nomor_user":[]})
+  for j in range(0, new_data.columns[-1], 3):
+    temp_user = pd.DataFrame()
+    nama = new_data[[j]].loc[2:].values.reshape(-1)
+    nama = nama[nama!='']
+    email = new_data[[j+1]].loc[2:].values.reshape(-1)
+    email = email[email!='']
+    nomor = new_data[[j+2]].loc[2:].values.reshape(-1)
+    nomor = nomor[nomor!='']
+    temp_user = pd.DataFrame({"nama_user":nama, "email_user":email, "nomor_user":nomor})
+    temp_user['source'] = new_data[[j]].loc[0].values[0]
+    new_user = pd.concat([new_user, temp_user], axis=0, ignore_index=True)
+  new_user.drop_duplicates(subset=['email_user'], inplace=True)
+  return new_user
 
 def preprocess_nomor(nomor):
   nomor = str(nomor)
@@ -154,16 +169,20 @@ def preprocess_nomor(nomor):
 
 def main():
   password = st.text_input("Enter a password", type="password")
-  if password == st.secrets["PASSWORD"]:
+  if password == 'suramadu':
     sheet_title = 'experiment_database'
     free_class = "FREE CLASS 2024"
+    bootcamp = "BOOTCAMP 2024"
     worksheet_titles = ['event_list', 'user', 'event_log', 'event_transaction', 'registered_user', 'unregistered_user', 'data_member_terbaru']
     
     event_list_worksheet = open_google_sheet(sheet_title, worksheet_titles[0])
     event_list = read_worksheet(event_list_worksheet)
     
-    jenis_event = st.text_input("Enter event type ")
-    tanggal_event = st.text_input("Enter some event date 👇")
+    jenis_event = st.radio(
+      "Choose event type",
+      ["Free Class", "Bootcamp"],
+    )
+    tanggal_event = st.text_input("Enter some event date or month")
     
     if not tanggal_event or not jenis_event:
       st.warning("Please enter both event date and type to proceed.")
@@ -173,15 +192,16 @@ def main():
       return
     else:
       try:
-        new_worksheet = open_google_sheet(free_class, tanggal_event)
-        new_data = read_worksheet(new_worksheet, header=False)
+        if jenis_event == "Free Class":
+          new_worksheet = open_google_sheet(free_class, tanggal_event)
+          new_data = read_worksheet(new_worksheet, header=False)
+        else:
+          new_worksheet = open_google_sheet(bootcamp, tanggal_event)
+          new_data = read_worksheet(new_worksheet, header=False)
       except pygsheets.exceptions.WorksheetNotFound as e:
         st.error(f"Worksheet not found: {e}")
         return
-      
-      tanggal_event = tanggal_event
-      jenis_event = jenis_event
-      
+    
       bar = st.progress(0, text="reading data")
       user_worksheet = open_google_sheet(sheet_title, worksheet_titles[1])
       event_log_worksheet = open_google_sheet(sheet_title, worksheet_titles[2])
@@ -201,7 +221,10 @@ def main():
       insert_to_event(event_list_worksheet, event_list, jenis_event, tanggal_event)
       event_list = read_worksheet(event_list_worksheet)
       
-      new_user, buyer = extract_data_event(new_data)
+      if jenis_event == "Free Class":
+        new_user, buyer = extract_data_free_class(new_data)
+      else:
+        new_user = extract_data_bootcamp(new_data)
       
       bar.progress(50, text="input to user")
       insert_to_user(user_worksheet, user, new_user)
@@ -212,12 +235,12 @@ def main():
       event_log = read_worksheet(event_log_worksheet)
       
       bar.progress(80, text="input to event_transactin")
-      insert_to_event_transaction(event_transaction_worksheet, event_transaction, buyer, user, event_log)
-      event_transaction = read_worksheet(event_transaction_worksheet)
+      if jenis_event == "Free Class":
+        insert_to_event_transaction(event_transaction_worksheet, event_transaction, buyer, user, event_log)
+        event_transaction = read_worksheet(event_transaction_worksheet)
       
-      bar.progress(90, text="input to registered_user")
-      insert_to_registered_user(registered_user_worksheet, registered_user, data_member_terbaru, buyer, user)
-      
+        bar.progress(90, text="input to registered_user")
+        insert_to_registered_user(registered_user_worksheet, registered_user, data_member_terbaru, buyer, user)
       bar.progress(100, text="completed")
       bar.empty()
       st.write("Done")
@@ -225,4 +248,3 @@ def main():
     
 if __name__ == "__main__":
   main()
-  
